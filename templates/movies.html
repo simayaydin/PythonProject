@@ -1,0 +1,159 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8" /> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
+    <title>{{ page_title }} - Movie Review System</title> <!-- Dinamik sayfa başlığı -->
+
+    <!-- Google Fonts üzerinden 'Inter' fontu ekleniyor -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to right, #74ebd5, #ACB6E5); /* Arkaplan renk geçişi */
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: rgba(255, 255, 255, 0.3);
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        /* Sidebar liste elemanları */
+        .sidebar li {
+            list-style: none;
+            margin-bottom: 10px;
+        }
+
+        /* Sidebar linkleri */
+        .sidebar a {
+            text-decoration: none;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .container {
+            flex: 1;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #222;
+            text-align: center;
+        }
+
+        /* Filmler için grid yapısı */
+        .movies-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        /* Film kartları */
+        .movie-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 200px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Hover efekti (kart yükseliyor) */
+        .movie-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Film kartındaki görseller */
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover; /* Resmin taşmasını önler, kırpma yapar */
+        }
+
+        .info {
+            padding: 10px;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+        }
+
+        .top-bar a {
+            color: #333;
+            font-weight: 600;
+            text-decoration: none;
+            background-color: rgba(255,255,255,0.7);
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Categories</h2>
+    <ul>
+        <!-- 'All Movies' linki -->
+        <li><a href="{{ url_for('movies_page') }}">All Movies</a></li>
+        <!-- Dinamik kategori listesi -->
+        {% for category in categories %}
+            <li><a href="{{ url_for('category_page', category_name=category) }}">{{ category }}</a></li>
+        {% endfor %}
+    </ul>
+  </div>
+
+    <div class="container">
+        <div class="top-bar">
+            {% if session.get('user') %}
+                <span>{{ session.get('user') }}</span>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+            {% endif %}
+        </div>
+        
+        <h1>{{ page_title }}</h1>
+
+        <!-- Filmler listesi -->
+        <div class="movies-grid">
+            {% for movie in movies %}
+                <div class="movie-card" onclick="location.href='/movie/{{ movie.Series_Title }}'">
+                    <!-- Film görseli -->
+                    <img src="{{ url_for('static', filename='images/' + movie.Series_Title.replace(' ', '_').replace('/', '_') + '.png') }}" alt="{{ movie.Series_Title }}">
+                    
+                    <!-- Film bilgileri -->
+                    <div class="info">
+                        <h3>{{ movie.Series_Title }}</h3>
+                        <p>IMDB: ⭐ {{ movie.IMDB_Rating }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

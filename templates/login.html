@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login</title> <!-- Sayfa başlığı -->
+  <!-- Google Fonts'tan Inter fontu ekleniyor -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* Body genel stil */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5); /* Arkaplan gradyanı */
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 20px;
+    }
+
+    /* Form kutusu */
+    .form-box {
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* Başlık */
+    h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #222;
+    }
+
+    /* Etiketler */
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Input alanları */
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 18px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+    }
+
+    /* Giriş butonu */
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00a8ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #007acc;
+    }
+
+    /* Alt link (Kayıt için yönlendirme) */
+    .link {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .link a {
+      color: #00a8ff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Giriş formu -->
+  <form action="/login" method="post" class="form-box">
+    <h2>Login</h2>
+
+    <!-- Kullanıcı adı -->
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" required>
+
+    <!-- Şifre -->
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required>
+
+    <!-- Giriş yap butonu -->
+    <button type="submit">Login</button>
+
+    <!-- Hesabın yoksa kayıt ol yönlendirmesi -->
+    <div class="link">
+      Don’t have an account? <a href="/register">Register here</a>
+    </div>
+  </form>
+</body>
+</html>
