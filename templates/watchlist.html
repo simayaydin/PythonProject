@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Watchlist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to right, #74ebd5, #ACB6E5);
+            color: #333;
+            padding: 40px 20px;
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 600px;
+            margin: 20px auto;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card a {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #007acc;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .card a:hover {
+            text-decoration: underline;
+            color: #005f99;
+        }
+        .remove-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .remove-btn:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;">Your Watchlist</h1>
+    {% if movies %}
+        {% for movie in movies %}
+            <div class="card">
+                <a href="{{ url_for('movie_detail', title=movie.movie_title) }}">
+                    🎬 {{ movie.movie_title }}
+                </a>
+                <form action="{{ url_for('remove_from_watchlist', id=movie.id) }}" method="post">
+                    <button type="submit" class="remove-btn">Remove</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align:center;">You have no movies in your watchlist yet.</p>
+    {% endif %}
+</body>
+</html>

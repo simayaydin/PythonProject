@@ -51,6 +51,15 @@ TRAILERS = {
     "Up": "https://www.youtube.com/watch?v=pkqzFUhGPJg",
     "Niloya": "https://www.youtube.com/watch?v=z7RFLPkhkzA"
 }
+# En çok puan alan ünlüleri tutan dictionary
+CELEBRITIES = {
+    "Leonardo DiCaprio": {"rating": 9.5, "image": "images/Leonardo_DiCaprio.png"},
+    "Morgan Freeman": {"rating": 9.4, "image": "images/Morgan_Freeman.png"},
+    "Scarlett Johansson": {"rating": 9.3, "image": "images/Scarlett_Johansson.png"},
+    "Tom Hanks": {"rating": 9.2, "image": "images/Tom_Hanks.png"},
+    "Natalie Portman": {"rating": 9.1, "image": "images/Natalie_Portman.png"},
+    "Robert De Niro": {"rating": 9.0, "image": "images/Robert_De_Niro.png"},
+}
 
 # Flask uygulamasını başlatıyoruz
 app = Flask(__name__)
@@ -77,7 +86,21 @@ def home():
             'image': image_path
         })
 
-    return render_template("index.html", top_movies=movies_with_images, categories=category_list)
+    # Celebrities'leri liste haline getiriyoruz
+    celebrities_with_images = []
+    for name, data in CELEBRITIES.items():
+        celebrities_with_images.append({
+            "name": name,
+            "rating": data["rating"],
+            "image": data["image"]
+        })
+
+    return render_template(
+        "index.html",
+        top_movies=movies_with_images,
+        categories=category_list,
+        celebrities=celebrities_with_images
+    )
 
 # Kategoriye göre filmleri filtreleme
 @app.route("/filter")
@@ -97,6 +120,7 @@ def filter_movies():
 # Login yapma
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    error = None
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -105,13 +129,14 @@ def login():
         user = conn.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password)).fetchone()
         conn.close()
 
-        if user: # Database'deki user ile girilen user'ın eşleşmesi kontrolü
+        # kullanıcının veritabanında olup olmadığını kontrol etme
+        if user:
             session["user"] = username
             return redirect(url_for("home"))
         else:
-            return "Invalid username or password."
+            error = "🚫 This user is not registered in the system. Please check your username and password."
 
-    return render_template("login.html")
+    return render_template("login.html", error=error)
 
 # çıkış yapma
 @app.route("/logout")
@@ -193,6 +218,90 @@ def movie_detail(title):
         trailer_url=trailer_url
     )
 
+# Review düzenleme
+@app.route("/edit_review/<int:review_id>", methods=["POST"])
+def edit_review(review_id):
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+
+    new_score = int(request.form["score"])
+    new_comment = request.form["comment"]
+
+    conn = get_db_connection()
+    review = conn.execute("SELECT * FROM reviews WHERE id = ?", (review_id,)).fetchone()
+
+    if review and review["username"] == user:
+        conn.execute(
+            "UPDATE reviews SET score = ?, comment = ?, date = ? WHERE id = ?",
+            (new_score, new_comment, datetime.now().strftime("%Y-%m-%d"), review_id)
+        )
+        conn.commit()
+    conn.close()
+    return redirect(url_for("movie_detail", title=review["movie_title"]))
+
+# Watchlist'e film ekleme
+@app.route("/add_to_watchlist/<title>", methods=["POST"])
+def add_to_watchlist(title):
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    existing = conn.execute(
+        "SELECT * FROM watchlist WHERE username = ? AND movie_title = ?", (user, title)
+    ).fetchone()
+    if not existing:
+        conn.execute(
+            "INSERT INTO watchlist (username, movie_title) VALUES (?, ?)", (user, title)
+        )
+        conn.commit()
+    conn.close()
+    return redirect(url_for("movie_detail", title=title))
+
+# Watchlist görüntüleme
+@app.route("/watchlist")
+def watchlist():
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    movies = conn.execute(
+        "SELECT * FROM watchlist WHERE username = ?", (user,)
+    ).fetchall()
+    conn.close()
+    return render_template("watchlist.html", movies=movies)
+
+# Watchlist'ten silme 
+@app.route("/remove_from_watchlist/<int:id>", methods=["POST"])
+def remove_from_watchlist(id):
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    conn.execute("DELETE FROM watchlist WHERE id = ? AND username = ?", (id, user))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("watchlist"))
+
+# Review silme
+@app.route("/delete_review/<int:review_id>", methods=["POST"])
+def delete_review(review_id):
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    review = conn.execute("SELECT * FROM reviews WHERE id = ?", (review_id,)).fetchone()
+
+    if review and review["username"] == user:
+        conn.execute("DELETE FROM reviews WHERE id = ?", (review_id,))
+        conn.commit()
+    conn.close()
+    return redirect(url_for("movie_detail", title=review["movie_title"]))
+
 # kayıt olma
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -222,6 +331,31 @@ def register():
         return redirect(url_for("home"))
 
     return render_template("register.html")
+# Filmleri arama yapma
+@app.route("/search")
+def search():
+    query = request.args.get("q", "").strip()
+    conn = get_db_connection()
+    if query:
+        movies = conn.execute("SELECT * FROM movies WHERE Series_Title LIKE ?", (f"%{query}%",)).fetchall()
+    else:
+        movies = conn.execute("SELECT * FROM movies ORDER BY IMDB_Rating DESC LIMIT 6").fetchall()
+    conn.close()
+
+    # Görsel yollarını hazırlayalım
+    movies_with_images = []
+    for movie in movies:
+        title_safe = movie['Series_Title'].replace(" ", "_").replace("/", "_")
+        image_path = f"images/{title_safe}.png"
+        movies_with_images.append({
+            **dict(movie),
+            'image': image_path
+        })
+
+    # Aynı index.html'i döneceğiz ama sadece sonuçlarla
+    categories = [row['Genre'] for row in get_db_connection().execute("SELECT DISTINCT Genre FROM movies").fetchall()]
+    return render_template("index.html", top_movies=movies_with_images, categories=categories, current_category=f'Search: {query}')
+
 
 #çalıştırma
 if __name__ == "__main__":

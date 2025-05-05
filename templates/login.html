@@ -86,12 +86,31 @@
     .link a:hover {
       text-decoration: underline;
     }
+
+    /* Hata mesajı kutusu */
+    .error-message {
+      background-color: #ffdddd;
+      border-left: 6px solid #f44336;
+      color: #a94442;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <!-- Giriş formu -->
   <form action="/login" method="post" class="form-box">
     <h2>Login</h2>
+
+    <!-- Hata mesajı -->
+    {% if error is not none %}
+      <div class="error-message">
+        {{ error }}
+      </div>
+    {% endif %}
 
     <!-- Kullanıcı adı -->
     <label for="username">Username</label>
