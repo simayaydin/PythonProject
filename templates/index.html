@@ -123,19 +123,90 @@
         }
 
         .top-bar {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-        }
+    position: absolute;
+    top: 20px;
+    left: 220px; /* Sidebar genişliği kadar bırak */
+    right: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        .top-bar a {
-            color: #333;
-            font-weight: 600;
-            text-decoration: none;
-            background-color: rgba(255,255,255,0.7);
-            padding: 8px 15px;
-            border-radius: 5px;
-        }
+.left-actions a {
+    font-weight: 600;
+    background-color: rgba(255,255,255,0.7);
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #333;
+}
+
+.right-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* Dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    font-weight: 600;
+    background-color: rgba(255,255,255,0.7);
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 180px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dropdown-content a {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-content a:last-child {
+    border-bottom: none;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+.login-button {
+    font-weight: 600;
+    background-color: rgba(255,255,255,0.7);
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.login-button:hover {
+    background-color: rgba(255,255,255,0.9);
+}
+
+
     </style>
 </head>
 <body>
@@ -172,14 +243,29 @@
     </div>
 
     <div class="top-bar">
+    <!-- Sol kısım -->
+    <div class="left-actions">
+        <a href="{{ url_for('recommendations') }}">🎯 Recommendations</a>
+    </div>
+
+    <!-- Sağ kısım -->
+    <div class="right-actions">
         {% if session.get('user') %}
-            <span>{{ session.get('user') }}</span>
-            <a href="{{ url_for('watchlist') }}">📃 My Watchlist</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
+        <div class="dropdown">
+            <button class="dropbtn">👤 {{ session.get('user') }}</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('watchlist') }}">📃 My Watchlist</a>
+                <a href="{{ url_for('logout') }}">🔓 Logout</a>
+            </div>
+        </div>
         {% else %}
-            <a href="{{ url_for('login') }}">Login</a>
+        <a class="login-button" href="{{ url_for('login') }}"> Login</a>
         {% endif %}
     </div>
+</div>
+
+
+
 
     <!-- En yüksek puanlı filmler slider'ı -->
 <div style="display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;">

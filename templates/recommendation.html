@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Recommended for You</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      color: #333;
+      padding: 40px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .movie-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .movie-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      width: 220px;
+      text-align: center;
+    }
+
+    .movie-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .movie-card h3 {
+      margin: 10px 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Recommended for You</h1>
+  <div class="movie-grid">
+    {% for movie in movies %}
+      <div class="movie-card">
+        <img src="{{ url_for('static', filename='images/' + movie.Series_Title.replace(' ', '_').replace('/', '_') + '.png') }}" alt="{{ movie.Series_Title }}">
+        <h3>{{ movie.Series_Title }}</h3>
+        <p>IMDB: ⭐ {{ movie.IMDB_Rating }}</p>
+        <a href="{{ url_for('movie_detail', title=movie.Series_Title) }}">Details</a>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

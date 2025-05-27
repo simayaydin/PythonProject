@@ -2,10 +2,17 @@ from flask import Flask, render_template, request, redirect, session, url_for, j
 from datetime import datetime
 import sqlite3
 import os
+from lightfm import LightFM
+from lightfm.data import Dataset
+import pickle
+from scipy.sparse import csr_matrix
+import pandas as pd
+
+
 
 # Veritabanı bağlantısı fonksiyonu
 def get_db_connection():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect("database.db", timeout=10)
     conn.row_factory = sqlite3.Row  
     return conn
 
@@ -64,6 +71,15 @@ CELEBRITIES = {
 # Flask uygulamasını başlatıyoruz
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
+# Modeli ve dataset nesnesini yükle
+try:
+    with open("recommender_model.pkl", "rb") as f:
+        recommender_model, recommender_dataset = pickle.load(f)
+    print("✅ Model yüklendi.")
+except Exception as e:
+    print(f"❌ Model yüklenemedi: {e}")
+    recommender_model, recommender_dataset = None, None
+
 
 # Film/Dizileri database'den alma ve kategorilere ayırma
 @app.route("/")
@@ -206,6 +222,14 @@ def movie_detail(title):
     movie_reviews = conn.execute(
         'SELECT * FROM reviews WHERE movie_title = ?', (title,)
     ).fetchall()
+    # Ortalama puanı ve yorum sayısını hesapla
+    avg_row = conn.execute(
+        "SELECT AVG(score) AS avg_score, COUNT(*) AS count FROM reviews WHERE movie_title = ?",
+        (title,)
+    ).fetchone()
+    overall_rating = round(avg_row["avg_score"], 1) if avg_row["avg_score"] is not None else None
+    review_count = avg_row["count"]
+
     conn.close()
 
     trailer_url = TRAILERS.get(movie['Series_Title'], None) 
@@ -214,9 +238,12 @@ def movie_detail(title):
         "movie_detail.html",
         movie=movie,
         movie_reviews=movie_reviews,
+        overall_rating=overall_rating,
+        review_count=review_count,
         error=error,
         trailer_url=trailer_url
     )
+
 
 # Review düzenleme
 @app.route("/edit_review/<int:review_id>", methods=["POST"])
@@ -354,9 +381,73 @@ def search():
 
     # Aynı index.html'i döneceğiz ama sadece sonuçlarla
     categories = [row['Genre'] for row in get_db_connection().execute("SELECT DISTINCT Genre FROM movies").fetchall()]
+    conn.close()
     return render_template("index.html", top_movies=movies_with_images, categories=categories, current_category=f'Search: {query}')
+    
+    #çalıştırma
+    if __name__ == "__main__":
+        app.run(debug=True, threaded=False)
 
+# === Öneri Sistemi Route'u ===
+import pickle
+from lightfm import LightFM
+from lightfm.data import Dataset
+import numpy as np
 
-#çalıştırma
+# Eğitimli modeli başta bir kere yükle (isteğe bağlı olarak global de yapabiliriz)
+with open("recommender_model.pkl", "rb") as f:
+    recommender_model, recommender_dataset = pickle.load(f)
+
+@app.route("/recommendations")
+def recommendations():
+    import numpy as np  # Gerekli import
+
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    username = session["user"]
+
+    try:
+        # Model ve dataset yoksa hata ver
+        if recommender_model is None or recommender_dataset is None:
+            return "❌ Model yüklenemedi."
+
+        # Mapping bilgilerini al
+        user_id_map, _, item_id_map, _ = recommender_dataset.mapping()
+
+        if username not in user_id_map:
+            return "❌ Bu kullanıcı modele göre tanımlı değil."
+
+        user_id = user_id_map[username]
+        n_items = len(item_id_map)
+
+        # Öneri skorlarını hesapla
+        scores = recommender_model.predict(user_id, np.arange(n_items))
+        top_items = np.argsort(-scores)[:10]
+
+        # ID → Film adı eşlemesi
+        reverse_item_map = {v: k for k, v in item_id_map.items()}
+        recommended_titles = [reverse_item_map[i] for i in top_items]
+
+        # Veritabanından detaylı bilgileri çek
+        conn = sqlite3.connect("database.db")
+        movies_df = pd.read_sql_query("SELECT Series_Title, IMDB_Rating FROM movies", conn)
+        conn.close()
+
+        # Sadece önerilen filmleri detaylarıyla getir
+        recommended_movies = []
+        for title in recommended_titles:
+            match = movies_df[movies_df["Series_Title"] == title]
+            if not match.empty:
+                recommended_movies.append({
+                    "Series_Title": title,
+                    "IMDB_Rating": match.iloc[0]["IMDB_Rating"]
+                })
+
+        return render_template("recommendation.html", movies=recommended_movies)
+
+    except Exception as e:
+        return f"❌ Öneri alınırken hata oluştu: {e}"
+    
 if __name__ == "__main__":
     app.run(debug=True)

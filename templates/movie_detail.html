@@ -127,6 +127,15 @@
     <p><strong>Runtime:</strong> {{ movie.Runtime }} min</p>
     <p><strong>Genre:</strong> {{ movie.Genre }}</p>
     <p><strong>IMDB Rating:</strong> ⭐ {{ movie.IMDB_Rating }}</p>
+    <p>
+    <strong>Overall Rating:</strong>
+    {% if overall_rating %}
+      ⭐ {{ overall_rating }} ({{ review_count }} review{% if review_count > 1 %}s{% endif %})
+    {% else %}
+      No reviews yet.
+    {% endif %}
+  </p>
+
     <p><strong>Overview:</strong> {{ movie.Overview }}</p>
     <p><strong>Meta Score:</strong> {{ movie.Meta_score }}</p>
     <p><strong>Director:</strong> {{ movie.Director }}</p>
@@ -170,8 +179,8 @@
   <p>No reviews yet.</p>
 {% endif %}
 
-    <!-- Yorum ekleme formu -->
     {% if session.get("user") %}
+    <!-- Yorum ekleme formu -->
     <h3>Leave a Review</h3>
 
     {% if error %}
@@ -193,10 +202,10 @@
     <!-- Watchlist'e ekleme butonu -->
     <form method="post" action="{{ url_for('add_to_watchlist', title=movie.Series_Title) }}">
       <button type="submit">➕ Add to Watchlist</button>
-  </form>
-
-      <!-- Giriş yapılmamışsa mesaj -->
-      <p style="margin-top: 20px;"><a href="/login">Login</a> to leave a review.</p>
+    </form>
+    {% else %}
+    <!-- Giriş yapılmamışsa mesaj -->
+    <p style="margin-top: 20px;"><a href="/login">Login</a> to leave a review.</p>
     {% endif %}
   </div>
 </body>
