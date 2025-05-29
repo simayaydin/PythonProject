@@ -394,60 +394,65 @@ from lightfm import LightFM
 from lightfm.data import Dataset
 import numpy as np
 
-# Eğitimli modeli başta bir kere yükle (isteğe bağlı olarak global de yapabiliriz)
 with open("recommender_model.pkl", "rb") as f:
     recommender_model, recommender_dataset = pickle.load(f)
 
 @app.route("/recommendations")
 def recommendations():
-    import numpy as np  # Gerekli import
-
     if "user" not in session:
         return redirect(url_for("login"))
 
     username = session["user"]
 
     try:
-        # Model ve dataset yoksa hata ver
-        if recommender_model is None or recommender_dataset is None:
-            return " Model yüklenemedi."
-
-        # Mapping bilgilerini al
-        user_id_map, _, item_id_map, _ = recommender_dataset.mapping()
-
-        if username not in user_id_map:
-            return " Bu kullanıcı modele göre tanımlı değil."
-
-        user_id = user_id_map[username]
-        n_items = len(item_id_map)
-
-        # Öneri skorlarını hesapla
-        scores = recommender_model.predict(user_id, np.arange(n_items))
-        top_items = np.argsort(-scores)[:10]
-
-        # ID → Film adı eşlemesi
-        reverse_item_map = {v: k for k, v in item_id_map.items()}
-        recommended_titles = [reverse_item_map[i] for i in top_items]
-
-        # Veritabanından detaylı bilgileri çek
         conn = sqlite3.connect("database.db")
-        movies_df = pd.read_sql_query("SELECT Series_Title, IMDB_Rating FROM movies", conn)
+        cursor = conn.cursor()
+
+        # Kullanıcının yüksek puan verdiği filmleri al (örneğin puanı 7 ve üzeri)
+        high_rated = cursor.execute("""
+            SELECT movie_title FROM reviews 
+            WHERE username = ? AND score >= 7
+        """, (username,)).fetchall()
+
+        if not high_rated:
+            conn.close()
+            return render_template("recommendation.html", movies=[], message="Henüz yüksek puan verdiğiniz bir film bulunamadı.")
+
+        high_rated_titles = [row[0] for row in high_rated]
+
+        # Bu filmlerin türlerini al
+        genre_rows = cursor.execute("""
+            SELECT DISTINCT Genre FROM movies 
+            WHERE Series_Title IN ({seq})
+        """.format(seq=','.join(['?']*len(high_rated_titles))), high_rated_titles).fetchall()
+
+        genres = [row[0] for row in genre_rows]
+        if not genres:
+            conn.close()
+            return render_template("recommendation.html", movies=[], message="Yüksek puan verilen filmlerin türü bulunamadı.")
+
+        # Daha önce puan verilmemiş ve bu türlerde geçen filmleri getir
+        placeholders = ','.join(['?'] * len(genres + high_rated_titles))
+        filtered_movies = cursor.execute(f"""
+            SELECT Series_Title, IMDB_Rating FROM movies
+            WHERE Genre IN ({','.join(['?']*len(genres))})
+              AND Series_Title NOT IN ({','.join(['?']*len(high_rated_titles))})
+            ORDER BY IMDB_Rating DESC
+            LIMIT 10
+        """, genres + high_rated_titles).fetchall()
+
         conn.close()
 
-        # Sadece önerilen filmleri detaylarıyla getir
-        recommended_movies = []
-        for title in recommended_titles:
-            match = movies_df[movies_df["Series_Title"] == title]
-            if not match.empty:
-                recommended_movies.append({
-                    "Series_Title": title,
-                    "IMDB_Rating": match.iloc[0]["IMDB_Rating"]
-                })
+        recommended_movies = [{
+            "Series_Title": row[0],
+            "IMDB_Rating": row[1]
+        } for row in filtered_movies]
 
         return render_template("recommendation.html", movies=recommended_movies)
 
     except Exception as e:
-        return f" Öneri alınırken hata oluştu: {e}"
+        return f"Öneri alınırken hata oluştu: {e}"
+
     
 if __name__ == "__main__":
     app.run(debug=True)

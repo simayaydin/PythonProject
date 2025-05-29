@@ -31,6 +31,11 @@
       padding: 15px;
       width: 220px;
       text-align: center;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .movie-card:hover {
+      transform: scale(1.03);
     }
 
     .movie-card img {
@@ -43,19 +48,49 @@
     .movie-card h3 {
       margin: 10px 0 5px;
     }
+
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #357ABD;
+    }
+
+    .empty-message {
+      text-align: center;
+      margin-top: 60px;
+      font-size: 18px;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
   <h1>Recommended for You</h1>
-  <div class="movie-grid">
-    {% for movie in movies %}
-      <div class="movie-card">
-        <img src="{{ url_for('static', filename='images/' + movie.Series_Title.replace(' ', '_').replace('/', '_') + '.png') }}" alt="{{ movie.Series_Title }}">
-        <h3>{{ movie.Series_Title }}</h3>
-        <p>IMDB: ⭐ {{ movie.IMDB_Rating }}</p>
-        <a href="{{ url_for('movie_detail', title=movie.Series_Title) }}">Details</a>
-      </div>
-    {% endfor %}
-  </div>
+
+  {% if movies %}
+    <div class="movie-grid">
+      {% for movie in movies %}
+        <div class="movie-card">
+          <img src="{{ url_for('static', filename='images/' + movie.Series_Title.replace(' ', '_').replace('/', '_') + '.png') }}" alt="{{ movie.Series_Title }}">
+          <h3>{{ movie.Series_Title }}</h3>
+          <p>IMDB: ⭐ {{ movie.IMDB_Rating }}</p>
+          <a class="btn" href="{{ url_for('movie_detail', title=movie.Series_Title) }}">Details</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-message">We couldn't find any recommendations for you right now. Try rating more movies!</p>
+  {% endif %}
+
 </body>
 </html>
