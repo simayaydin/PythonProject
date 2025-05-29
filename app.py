@@ -75,9 +75,9 @@ app.secret_key = 'supersecretkey'
 try:
     with open("recommender_model.pkl", "rb") as f:
         recommender_model, recommender_dataset = pickle.load(f)
-    print("✅ Model yüklendi.")
+    print(" Model yüklendi.")
 except Exception as e:
-    print(f"❌ Model yüklenemedi: {e}")
+    print(f" Model yüklenemedi: {e}")
     recommender_model, recommender_dataset = None, None
 
 
@@ -410,13 +410,13 @@ def recommendations():
     try:
         # Model ve dataset yoksa hata ver
         if recommender_model is None or recommender_dataset is None:
-            return "❌ Model yüklenemedi."
+            return " Model yüklenemedi."
 
         # Mapping bilgilerini al
         user_id_map, _, item_id_map, _ = recommender_dataset.mapping()
 
         if username not in user_id_map:
-            return "❌ Bu kullanıcı modele göre tanımlı değil."
+            return " Bu kullanıcı modele göre tanımlı değil."
 
         user_id = user_id_map[username]
         n_items = len(item_id_map)
@@ -447,7 +447,7 @@ def recommendations():
         return render_template("recommendation.html", movies=recommended_movies)
 
     except Exception as e:
-        return f"❌ Öneri alınırken hata oluştu: {e}"
+        return f" Öneri alınırken hata oluştu: {e}"
     
 if __name__ == "__main__":
     app.run(debug=True)
